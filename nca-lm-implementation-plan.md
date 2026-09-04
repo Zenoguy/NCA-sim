@@ -7,22 +7,24 @@ Author's context: continuation of the KdV-NCA project. This plan operationalizes
 
 ## 0. Repositioning, based on current literature (read this before writing code)
 
-Three corrections to make before implementation starts, because they change what you build:
+Four corrections to make before implementation starts, because they change what you build:
 
 1. **The "O(1) memory streaming" claim is not free territory.** State-space models (Mamba/Mamba-2/Mamba-3) and RWKV already own this niche as their entire value proposition — linear-time, constant-memory sequence modeling with transformer-competitive quality, actively developed through 2026 (Mamba-3 adds complex-valued state updates). If your headline claim for Level 4 is "NCA has bounded memory unlike Transformers," reviewers will immediately ask "so does Mamba, and better." **You need a baseline that includes a small Mamba/RWKV model, not just Transformer vs NCA.**
 
-2. **Your actual differentiator vs. SSMs is per-token iterative depth, not memory boundedness.** Mamba/RWKV do *one* state update per token. Your NCA-LM does *K* local update steps per token position before emitting a prediction — that's an adjustable "thinking per token" axis that SSMs don't have. This connects to the recurrent-depth / looped-transformer test-time-compute literature (models that iterate a shared block K times at inference to trade compute for quality), which is a hot, distinct research thread from SSMs. **Reframe Level 4's contribution as "adjustable per-step computation depth with bounded state," positioned against both Transformers (no depth-compute tradeoff at inference) and SSMs (no per-token iteration at all)**, not just "has memory, Transformer doesn't."
+2. **Your actual differentiator vs. SSMs is per-token iterative depth, not memory boundedness.** Mamba/RWKV do *one* state update per token. An NCA-LM does *K* local update steps over the sequence representation before emitting a prediction — that connects to the recurrent-depth / looped-transformer test-time-compute literature (models that iterate a shared block K times at inference to trade compute for quality), which is a hot, distinct research thread from SSMs. **Reframe the contribution as "adjustable per-step computation depth with bounded local communication," positioned against both Transformers (no depth-compute tradeoff at inference) and SSMs (no per-token iteration at all)**, not just "has memory, Transformer doesn't."
 
 3. **Causal masking is a first-class implementation detail, not an afterthought.** A naive local NCA update (symmetric neighbor convolution across the full sequence, repeated K times) will leak information from position i+1, i+2, ... backward into the state at position i after just 1 step. This invalidates next-token prediction — your model would be trivially "solving" the task by peeking at the answer. Every NCA-LM update must be **strictly causal at every micro-step**, not just causal in the final readout. This is spelled out in §6.
+
+4. **Receptive field scaling is non-negotiable for language (The FIR Receptive Field Trap).** An NCA with static radius $r=4$ repeated $K=4$ times has an effective receptive field of only $K \times r = 16$ tokens (~2–3 words). On WikiText-2, a 16-token model will produce catastrophic perplexity (PPL > 150) simply because it cannot see sentence-level context. *TextNCA* (Aug 2026) solved this by using **hierarchical local attention with expanding windows** ($w \in \{8, 32, 128\}$). For convolutional NCA, you **must use causal dilated convolutions** ($d_k = 2^k$) across the micro-steps so that $K=6$ reaches an effective receptive field of $\ge 126$ tokens without exploding parameter counts.
 
 ---
 
 ## 1. Success criteria (write these down now, check against them at each gate)
 
 The project succeeds if it produces **at least one** of:
-- A quantified regime where NCA-LM's degradation curve (perplexity vs. extrapolated sequence length) is measurably flatter than a matched Transformer's, with an explanation grounded in the causal-mask/positional-information literature (§7).
-- A quantified regime where an NCA-adaptor hybrid (Level 3) improves a Transformer's robustness (character-level noise, OOD text) at <5% parameter overhead, mirroring AdaNCA's finding for vision but for text.
-- A quantified streaming-inference advantage (latency or memory vs. context length) for NCA-LM against both a Transformer-with-KV-cache **and** a small Mamba/RWKV baseline — not just against Transformer.
+- **Level 3 Hybrid Robustness (Highest Priority & Primary Value Proposition):** A quantified regime where an NCA-adaptor hybrid improves a Transformer's robustness (character-level typos, subword drops, OOD text) at <5% parameter overhead, translating AdaNCA's (NeurIPS 2024) vision findings to language.
+- **Length Generalization (with honest controls):** A quantified regime where NCA-LM's degradation curve (perplexity vs. extrapolated sequence length) is measurably flatter than a matched Transformer, evaluated with **both** absolute perplexity reported and a **sliding-window attention Transformer** included as an explicit context-matched baseline (§7).
+- **Streaming & Compute-Depth Trade-off:** A quantified inference-depth advantage where increasing micro-step iterations $K$ at inference systematically recovers perplexity on harder/perturbed sequences, compared against fixed-depth SSMs (Mamba) and KV-cached Transformers.
 
 It fails informatively (still worth writing up) if none of these hold **and** you can point to which specific axis (locality radius, gating, iteration count, staging schedule) was ruled out and why — same standard as your KdV memory-gating negative result.
 
@@ -36,6 +38,7 @@ nca-lm/
 │   ├── level0_ngram.yaml
 │   ├── level1_gru.yaml
 │   ├── level1_transformer.yaml
+│   ├── level1_transformer_sliding.yaml # context-matched sliding window control
 │   ├── level1_mamba.yaml        # small SSM baseline, added per §0
 │   ├── level2_nca.yaml
 │   ├── level3_hybrid.yaml
@@ -47,16 +50,16 @@ nca-lm/
 ├── models/
 │   ├── ngram.py
 │   ├── rnn_baseline.py          # GRU/LSTM
-│   ├── transformer_baseline.py  # decoder-only, swappable PE
+│   ├── transformer_baseline.py  # decoder-only, swappable PE + sliding-window mode
 │   ├── mamba_baseline.py        # thin wrapper around an existing Mamba impl
-│   ├── nca_lm.py                # the core contribution
+│   ├── nca_lm.py                # the core contribution (dilated causal NCA)
 │   └── hybrid.py                # Transformer block + NCA adaptor
 ├── train.py                     # single entrypoint, config-driven
 ├── eval/
 │   ├── perplexity.py
-│   ├── length_generalization.py # train-short/test-long harness
+│   ├── length_generalization.py # train-short/test-long harness with absolute & relative metrics
 │   ├── streaming_bench.py       # latency/memory vs. context length
-│   └── noise_robustness.py      # char-level corruption for hybrid eval
+│   └── noise_robustness.py      # char-level corruption & typo injection for hybrid eval
 ├── notebooks/
 │   └── param_matching.ipynb     # verify matched parameter counts across models
 └── README.md                    # decision log — append, never rewrite history
@@ -71,7 +74,7 @@ Use one shared `train.py` and `Dataset`/`Tokenizer` across every model so compar
 **Datasets** (pick based on iteration speed, not final ambition):
 - **WikiText-2** (~2M tokens) — fast iteration, architecture debugging, param-matching sanity checks. Train an epoch in minutes on a single consumer GPU.
 - **WikiText-103** (~100M tokens) — the scale TextNCA used; needed if you want results directly comparable to that paper.
-- **enwik8** (byte-level, 100MB) — optional, useful if you want to sidestep tokenizer choice entirely and test raw sequence modeling.
+- **enwik8** (byte-level, 100MB) — optional, useful if you want to sidestep tokenizer choice entirely and test raw character/byte sequence modeling.
 
 Start on WikiText-2 for every architecture/debugging pass. Only move a config to WikiText-103 once it trains stably and matches expected loss curves at small scale.
 
@@ -95,15 +98,16 @@ Trivial but do it anyway — it's the "did the pipeline even work" sanity check 
 
 ## 5. Level 1 — conventional neural baselines
 
-Three models, all parameter-matched to your target NCA-LM size (start with ~10M params):
+Four models, all parameter-matched to your target NCA-LM size (start with ~10M params):
 
 - **GRU/LSTM** — 2–3 layers, standard next-token loss.
-- **Small decoder-only Transformer** — 4–6 layers, matched d_model/heads to hit the param target. This is your main comparison point.
+- **Standard decoder-only Transformer** — 4–6 layers, matched d_model/heads to hit the param target. Full causal attention.
+- **Sliding-Window Attention Transformer (Critical Control)** — Same architecture, but attention window restricted to match NCA-LM's maximum receptive field (e.g., $W=128$). This isolates the effect of local inductive bias from mere context window size.
 - **Small Mamba or RWKV baseline** — per §0, do not skip this. Use an existing open implementation (`mamba-ssm` package, or a minimal RWKV reference implementation) rather than reimplementing from scratch; you need it as a reference point, not as a research contribution in itself.
 
-Each gets a PE-swap variant per §7 (absolute PE / no PE) for the Transformer specifically — the RNN and Mamba baselines don't need this since recurrence gives them order for free.
+Each Transformer variant gets a PE-swap variant per §7 (absolute PE, RoPE, and NoPE).
 
-**Time budget: 3–5 days**, mostly infra/debugging, not tuning. Expected result (per TextNCA/CellARC precedent): Transformer ≥ Mamba/RWKV ≥ GRU at this scale. This is calibration, not a finding — don't over-tune.
+**Time budget: 3–5 days**, mostly infra/debugging, not tuning. Expected result: Full Transformer $\ge$ Mamba $\ge$ Sliding-Window Transformer $\ge$ GRU at this scale. This is calibration, not a finding — don't over-tune.
 
 ---
 
@@ -115,177 +119,238 @@ For a sequence of length T, position i has state:
 ```
 s_i^0 = [ e(x_{i-1}), h_i^0 ]        # shifted input, standard autoregressive convention
 ```
-where `e(x_{i-1})` is the token embedding of the *previous* token (standard GPT-style shift — position i predicts x_i using only x_{<i}), and `h_i^0` is a learned or zero-initialized hidden channel of dimension `d_h`. Total per-cell state dimension `d = d_e + d_h`.
+where `e(x_{i-1})` is the token embedding of the *previous* token (standard GPT-style shift — position i predicts x_i using only x_{<i}), and `h_i^0` is a learned or zero-initialized hidden channel of dimension `d_h`. Total per-cell state dimension `d_model = d_embed + d_h`.
 
-### 6.2 Causal local update rule (critical — see §0.3)
+### 6.2 Causal Dilated Local Update Rule (Corrected PyTorch Spec)
+
+To solve the 16-token receptive field bottleneck while strictly maintaining causality, we use **exponentially dilated causal convolutions** across micro-steps ($d_k = 2^k$). With $radius=2$ ($k=3$) and $K=6$, the receptive field expands to:
+$$\text{Receptive Field} = \text{radius} \times \sum_{k=0}^{K-1} 2^k = 2 \times (1 + 2 + 4 + 8 + 16 + 32) = 126 \text{ tokens.}$$
+
+Furthermore, we fix the dead `reset_gate` parameter and dimension mismatch bugs:
 
 ```python
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+
 class CausalNCAStep(nn.Module):
-    def __init__(self, d_model, radius=4, d_hidden=None):
+    def __init__(self, d_model, radius=2, d_hidden=None, max_K=8):
         super().__init__()
-        d_hidden = d_hidden or d_model * 2
-        k = radius + 1  # kernel sees [i-radius, ..., i], never i+1..
-        self.causal_conv = nn.Conv1d(
-            d_model, d_hidden, kernel_size=k, padding=0
-        )
+        self.d_model = d_model
+        self.d_hidden = d_hidden or (d_model * 2)
         self.radius = radius
-        # GRU-style gate — TextNCA found this necessary for iteration to help
-        self.update_gate = nn.Linear(d_hidden, d_model)
-        self.reset_gate = nn.Linear(d_hidden, d_model)
-        self.candidate = nn.Linear(d_hidden, d_model)
-        self.step_embed = None  # set per-K, see 6.3
+        self.kernel_size = radius + 1
+        self.max_K = max_K
+
+        # Exponential dilation schedule: [1, 2, 4, 8, 16, 32, ...]
+        self.dilations = [2**i for i in range(max_K)]
+        
+        # Bank of causal convs with shared channel dimensions but step-specific dilations
+        self.causal_convs = nn.ModuleList([
+            nn.Conv1d(
+                d_model, 
+                self.d_hidden, 
+                kernel_size=self.kernel_size, 
+                dilation=d, 
+                padding=0
+            )
+            for d in self.dilations
+        ])
+
+        # Step embedding correctly matches d_hidden
+        self.step_embed = nn.Parameter(torch.randn(max_K, self.d_hidden, 1) * 0.02)
+
+        # 1x1 Convolutions for GRU gating directly over [B, C, T] tensors
+        # Correct GRU recurrence: reset gate gates previous state s before candidate projection
+        self.update_gate = nn.Conv1d(self.d_hidden + d_model, d_model, kernel_size=1)
+        self.reset_gate = nn.Conv1d(self.d_hidden + d_model, d_model, kernel_size=1)
+        self.candidate_nhood = nn.Conv1d(self.d_hidden, d_model, kernel_size=1)
+        self.candidate_state = nn.Conv1d(d_model, d_model, kernel_size=1)
 
     def forward(self, s, step_idx):
-        # s: [B, d_model, T]
-        s_padded = F.pad(s, (self.radius, 0))  # LEFT pad only — enforces causality
-        neighborhood = self.causal_conv(s_padded)  # [B, d_hidden, T]
-        neighborhood = neighborhood + self.step_embed[step_idx]  # learned per-step embedding
+        """
+        Args:
+            s: [B, d_model, T] state tensor
+            step_idx: int index from 0 to K-1
+        Returns:
+            s_new: [B, d_model, T] updated state
+        """
+        d = self.dilations[step_idx]
+        pad_len = self.radius * d
+        
+        # STRICT LEFT PAD ONLY — enforces causality at every micro-step
+        s_padded = F.pad(s, (pad_len, 0))
+        neighborhood = self.causal_convs[step_idx](s_padded)  # [B, d_hidden, T]
+        neighborhood = neighborhood + self.step_embed[step_idx]
         neighborhood = F.silu(neighborhood)
 
-        z = torch.sigmoid(self.update_gate(neighborhood.transpose(1,2)))
-        r = torch.sigmoid(self.reset_gate(neighborhood.transpose(1,2)))
-        cand = torch.tanh(self.candidate(neighborhood.transpose(1,2)))
-        s_new = (1 - z) * s.transpose(1,2) + z * cand
-        return s_new.transpose(1,2)
+        # GRU-style gating
+        joint = torch.cat([neighborhood, s], dim=1)  # [B, d_hidden + d_model, T]
+        z = torch.sigmoid(self.update_gate(joint))     # Update gate [B, d_model, T]
+        r = torch.sigmoid(self.reset_gate(joint))      # Reset gate [B, d_model, T]
+
+        # r correctly modulates the previous state s
+        cand = torch.tanh(self.candidate_nhood(neighborhood) + self.candidate_state(r * s))
+        s_new = (1.0 - z) * s + z * cand
+        return s_new
 ```
 
-Key details, each tied directly to a finding from your prior research or the literature review:
-- **Left-only padding on the causal conv** is what prevents future-token leakage. Verify this with a unit test: zero out all tokens at position > i, confirm logits at position i are unchanged. This is the single most important correctness check in the whole project — run it before trusting any perplexity number.
-- **Per-step learned embeddings** (`step_embed[step_idx]`) — TextNCA found these necessary (along with the GRU gate) for the iteration-depth axis to produce any benefit at all. Don't skip this to save code; it's specifically flagged as required, not optional, by the closest prior work.
-- **Radius (neighbor window) and depth K jointly determine receptive field**, causally: `receptive_field = radius * K`. Log this number in every config — it's your controlled variable when comparing against Transformer's full-context or Mamba's full-history compression.
-
-### 6.3 Full model
+### 6.3 Full Model
 
 ```python
 class NCA_LM(nn.Module):
-    def __init__(self, vocab_size, d_embed, d_hidden_channels, radius, K, tie_weights=True):
+    def __init__(self, vocab_size, d_embed=256, d_hidden_channels=256, radius=2, K=6, tie_weights=True):
         super().__init__()
-        d_model = d_embed + d_hidden_channels
-        self.embed = nn.Embedding(vocab_size, d_embed)
+        self.d_embed = d_embed
+        self.d_model = d_embed + d_hidden_channels
         self.K = K
-        self.step = CausalNCAStep(d_model, radius=radius)
-        self.step.step_embed = nn.Parameter(torch.randn(K, d_model, 1) * 0.02)
-        self.readout = nn.Linear(d_model, vocab_size)
-        if tie_weights:
-            self.readout.weight = self.embed.weight if d_model == d_embed else None
-            # if dims don't match, use a projection before tying, or skip tying
+        self.embed = nn.Embedding(vocab_size, d_embed)
+        self.step = CausalNCAStep(self.d_model, radius=radius, max_K=K)
+        
+        self.readout = nn.Linear(self.d_model, vocab_size)
+        if tie_weights and (self.d_model == d_embed):
+            self.readout.weight = self.embed.weight
+        elif tie_weights:
+            self.readout_proj = nn.Linear(self.d_model, d_embed, bias=False)
+            self.readout.weight = self.embed.weight
 
     def forward(self, x):
-        # x: [B, T] token ids, already shifted (input = x[:, :-1], target = x[:, 1:])
+        # x: [B, T] token ids (input = x[:, :-1], target = x[:, 1:])
         B, T = x.shape
-        e = self.embed(x).transpose(1,2)                      # [B, d_embed, T]
-        h0 = torch.zeros(B, self.step.candidate.out_features - e.shape[1], T, device=x.device)
-        s = torch.cat([e, h0], dim=1)                          # [B, d_model, T]
+        e = self.embed(x).transpose(1, 2)  # [B, d_embed, T]
+        
+        # Initialize persistent hidden channels h0 with zeros or learned state
+        h0_dim = self.d_model - self.d_embed
+        if h0_dim > 0:
+            h0 = torch.zeros(B, h0_dim, T, device=x.device, dtype=e.dtype)
+            s = torch.cat([e, h0], dim=1)  # [B, d_model, T]
+        else:
+            s = e
+            
+        # Parallel micro-step updates across sequence
         for k in range(self.K):
             s = self.step(s, step_idx=k)
-        logits = self.readout(s.transpose(1,2))                # [B, T, vocab]
+            
+        if hasattr(self, 'readout_proj'):
+            s_out = self.readout_proj(s.transpose(1, 2))  # [B, T, d_embed]
+            logits = F.linear(s_out, self.embed.weight)
+        else:
+            logits = self.readout(s.transpose(1, 2))      # [B, T, vocab]
+            
         return logits
 ```
 
-This preserves **parallel training** — every micro-step is a batched causal conv over the whole sequence at once (like WaveNet/causal-CNN), not a token-by-token loop. This matters: it's the property that made Transformers beat RNNs on training throughput, and NCA-LM keeps it. Say this explicitly in any writeup; it pre-empts the "isn't this just a slow RNN" objection.
+This preserves **parallel training** — every micro-step is a batched 1D causal convolution across the sequence, keeping $O(T)$ training parallelism.
 
-### 6.4 Hyperparameter sweep (Level 2 core experiment)
+### 6.4 Hyperparameter Sweep (Level 2 Core Experiment)
 
-Given TextNCA's finding of a clean optimum around K≈4 with U-shaped degradation beyond it, don't blindly run K up to 32 as originally planned — that's now a **confirmatory** sweep, not exploratory:
+With dilation enabled, $K$ now scales receptive field exponentially:
 
-| Axis | Values to test | Expected outcome (prior) | What a surprise would mean |
+| Axis | Values to test | Receptive Field (r=2) | Expected Outcome |
 |---|---|---|---|
-| K (depth) | 1, 2, 4, 8, 16 | perplexity improves to ~K=4, degrades after | if monotonic improvement continues past 8, this diverges from TextNCA — investigate why (different gating? different task?) |
-| radius | 1, 2, 4, 8 | larger radius ≈ trades off against K for same receptive field | if radius and K aren't roughly interchangeable at fixed r·K, the "receptive field" framing is wrong and needs revision |
-| gating on/off | GRU-gated vs. plain additive update | gated version needed for K-benefit to appear at all | if plain additive matches gated, you've found a simplification worth reporting |
+| K (depth) | 1, 2, 4, 6, 8 | 2, 6, 30, 126, 510 tokens | Rapid PPL gain up to K=6; plateau/diminishing returns beyond K=6 |
+| Dilation | Exponential ($2^k$) vs. Linear ($k$) vs. None ($1$) | 126 vs. 42 vs. 12 (at K=6) | Exponential dilation drastically outperforms no-dilation |
+| Gating | Full GRU vs. Update-only (Highway) vs. Additive | Fixed | Full GRU required for stable multi-step propagation |
 
-**Time budget: 1–1.5 weeks**, mostly on WikiText-2, with a confirmation run on WikiText-103 for the single best config only (don't grid-search at the expensive scale).
-
-**Expected headline result: NCA-LM loses on raw perplexity to Transformer and likely to Mamba/RWKV too.** This is the calibrated-expectation outcome per CellARC and TextNCA. Do not spend extra weeks trying to close this gap — that's the KdV/CNN-beats-NCA-by-30x pattern repeating. Move to §7 and Level 3/4 once this is characterized, not once it's "fixed."
+**Expected Headline Result:** Standalone NCA-LM will perform competitively with the *Sliding-Window Transformer* ($W=128$), but will still lag behind the full-context Transformer and Mamba. **Do not burn compute trying to close the gap on full-context WikiText.** Move immediately to §7 and Level 3.
 
 ---
 
-## 7. The corrected positional-encoding / length-generalization experiment (do this early — it's cheap)
+## 7. Positional-Encoding & Length Generalization (The "No Vanity Metric" Protocol)
 
-This should run in parallel with Level 1, not after Level 2 — it only needs the Transformer baseline plus NCA-LM once a minimal version exists.
+> [!WARNING]
+> **The Degenerate Flat-Curve Trap:** A local convolutional model with receptive field $W$ trivially exhibits 0% degradation when evaluated at length 1024 vs 128 because position $i$ mathematically cannot read beyond $i-W$. Claiming "superior length generalization" because the curve is flat while absolute perplexity is mediocre is a hollow vanity metric.
 
-**Protocol:**
-1. Train each model at a fixed short length (e.g., 128 tokens).
-2. Evaluate perplexity at held-out lengths: 128 (in-distribution), 256, 512, 1024 (extrapolation).
-3. Plot perplexity vs. eval length for each configuration:
-
-| Model | Config |
-|---|---|
-| Transformer | absolute positional encoding |
-| Transformer | no positional encoding (causal, "NoPos") |
-| NCA-LM | (no PE concept applies — topology is inherent) |
-| Mamba/RWKV | (also inherently order-aware via recurrence — include as reference) |
-
-**Why this design, not same-length PE on/off:** causal Transformers already recover implicit absolute position from the causal attention mask alone (Haviv et al., 2022) and are competitive with explicit PE at training length — so an in-distribution "PE vs no-PE" comparison will show little difference and won't test what you think it's testing. The literature's actual finding is that **NoPE Transformers generalize weakly to lengths beyond training** (Kazemnejad et al., 2023: e.g., train ~20 tokens, test ~40, degrades sharply) despite being fine in-distribution. That's the sharp, quantified, already-established failure curve to test NCA-LM against.
-
-**Hypothesis to test:** NCA-LM's fixed local topology is structurally closer to *relative* position encoding (à la ALiBi/RoPE, which are known to generalize better with length than absolute PE or NoPE) rather than "no position information" — because a cell's neighbor relationship (i−1 ↔ i ↔ i+1) is baked into the architecture, not learned. If NCA-LM's degradation curve at 4×–8× training length is flatter than both Transformer variants, that's your sharpest, most citable single result, and it has a mechanistic story (structural relative locality) rather than being an unexplained curiosity.
-
-**Time budget: 3–4 days**, cheap because it reuses Level 1/2 checkpoints and only extends eval, not training.
+### Corrected Protocol:
+1. **Models to Compare:**
+   - Standard Transformer (with Absolute PE)
+   - Standard Transformer (NoPE / "NoPos", Haviv et al. / Kazemnejad et al.)
+   - Standard Transformer (with RoPE)
+   - **Sliding-Window Transformer ($W=128$, RoPE) [Mandatory Control]**
+   - NCA-LM (Receptive Field = 126)
+   - Mamba / RWKV (recurrent reference)
+2. **Lengths:** Train all models at length $T=128$. Evaluate at $T \in \{128, 256, 512, 1024\}$.
+3. **Required Dual Reporting:**
+   - Plot **Absolute Perplexity vs. Test Length** on the primary axis.
+   - Plot **Relative Degradation Ratio** ($\text{PPL}_{1024} / \text{PPL}_{128}$) on the secondary axis.
+   - **Scientific hypothesis:** If NCA-LM matches or beats the *Sliding-Window Transformer* on both absolute PPL and stability beyond $T=128$, the structural relative inductive bias of NCA is empirically validated.
 
 ---
 
-## 8. Level 3 — Hybrid (NCA as adaptor, not replacement)
+## 8. Level 3 — Hybrid: NCA as Robustness Adaptor (The Primary Research Opportunity)
 
-Directly analogous to AdaNCA (NCA inserted between ViT layers, NeurIPS 2024) but applied to language:
+This is the **strongest, most publishable hypothesis of the project**, translating AdaNCA (NeurIPS 2024) from vision to language:
 
 ```
-Transformer block → NCA-adaptor (few causal micro-steps) → Transformer block → ...
+Input Tokens → Embedding → Transformer Block 1 → NCA Adaptor (K=2) → Transformer Block 2 → ... → Output Logits
 ```
 
-- Insert a lightweight NCA step (K=2–4, small radius) between 2–3 selected Transformer layers.
-- Target parameter overhead: <5%, matching AdaNCA's claimed efficiency.
-- **Evaluate on two axes, not perplexity alone:**
-  1. Standard perplexity delta (expect small, possibly negative — that's fine, it's not the point).
-  2. **Robustness**: character-level noise injection (typos, swaps, deletions) at test time, measuring perplexity degradation with vs. without the NCA adaptor. This mirrors AdaNCA's adversarial/OOD robustness framing, translated to text corruption, since that's the property their vision result actually demonstrated.
+### 8.1 Why This Works Conceptually
+Vision Transformers lack local spatial inductive bias; AdaNCA showed that inserting lightweight local NCA adaptors between ViT layers improved adversarial robustness by +10% at <3% parameter cost. 
 
-**Time budget: 1–2 weeks.** This is your strongest candidate for a genuinely novel, publishable result, because it's the "augment before replace" move — historically the one that actually worked (Bahdanau attention before Transformers) — and it's testing a hypothesis (text robustness) that AdaNCA's own paper didn't cover.
+In NLP, tokenized representations suffer extreme brittleness to surface perturbations: a single typo or OCR error maps to a wildly different subword token, disrupting global self-attention. A local NCA adaptor applies **iterative local diffusion and error-correction** in latent space, restoring representational stability.
 
----
+### 8.2 Evaluation Protocol
+1. **Parameter Overhead:** Insert 2-step NCA adaptors between 2 intermediate Transformer layers; constrain overhead to $<5\%$ total model parameters.
+2. **Clean Perplexity:** Confirm clean WikiText-2 perplexity does not degrade significantly ($< 0.5$ PPL delta).
+3. **Robustness Benchmark (The Key Test):** Inject synthetic corruptions into the test set:
+   - Character swaps, insertions, deletions (simulating typos).
+   - Subword masking / dropout (simulating missing text).
+   - Evaluate degradation curve: $\Delta \text{Perplexity}$ as corruption probability $p \in [0.0, 0.2]$ increases.
+   - **Hypothesis:** Transformer + NCA Adaptor retains substantially lower perplexity under noise than vanilla Transformer.
 
-## 9. Level 4 — targeted streaming/persistent-state experiment
-
-Only run this if Level 2 or 3 showed *something* interesting on state persistence (per your KdV memory-swap precedent) — otherwise this is premature.
-
-**Protocol, direct descendant of your KdV memory-swap ablation:**
-1. Generate a long document in streaming fashion: feed tokens one at a time, let NCA-LM evolve its persistent cellular state incrementally rather than recomputing over a growing window.
-2. Compare against: Transformer with KV-cache (standard incremental decoding), and the Mamba/RWKV baseline (native streaming).
-3. Metrics: (a) perplexity as a function of stream length — does NCA-LM's quality degrade, plateau, or stay flat as the "context" grows past what it saw in training; (b) wall-clock latency and memory per new token, across all three architectures.
-4. **Corruption/robustness probe**, reusing your KdV technique directly: mid-stream, zero or randomize the persistent hidden state and observe how generation quality recovers or fails, exactly as you did for the memory-swap experiment on KdV. This is a genuine methodological reuse across domains — worth stating explicitly as a validated technique carried over from Phase 1.
-
-**Time budget: 1–2 weeks**, contingent on Level 2/3 results being interesting enough to justify it.
+**Time budget: 1.5–2 weeks.** Focus the bulk of the project's analytical depth here.
 
 ---
 
-## 10. Level 5 — conditional architectural replacement
+## 9. Level 4 — Streaming Inference & State Persistence
 
-Explicitly gated: only attempt if Levels 2–4 produced a clear, specific advantage (not just "NCA is interesting"). Given CellARC and TextNCA precedent, budget for this **not happening** in the current project cycle. If it's warranted, scope it as "how much of the Transformer can be replaced while retaining property X" (X = the specific thing that worked, e.g. length generalization or streaming robustness) — not a full architecture race.
+Only run this if Level 2/3 demonstrated compelling local dynamics.
+
+### 9.1 Mathematical Reality of Streaming Dilated Convolutions
+Unlike RNNs or SSMs (which are IIR dynamical systems with latent state vectors), an FIR causal convolution's state buffer is a **FIFO activation cache**.
+- At each token generation step, the model only stores past activations of length $d_k \times \text{radius}$ for each layer $k$.
+- Total memory per token is $O(K \cdot \text{radius} \cdot d_{max})$, strictly constant $O(1)$ with respect to sequence length $T$.
+- Compare against KV-cached Transformer ($O(T)$ memory growth) and Mamba ($O(1)$ latent state).
+
+### 9.2 The State Disruption Probe
+Reusing the KdV state-swapping methodology:
+1. Stream 500 tokens of text.
+2. At token 250, perturb the layer cache (zeroing, Gaussian noise, or swapping with another sequence).
+3. Measure recovery time (how many tokens until next-token cross-entropy returns to baseline).
+4. Contrast against Mamba's latent state disruption.
 
 ---
 
-## 11. Compute budget (rough, single-GPU assumption, ~24GB class card)
+## 10. Level 5 — Conditional Architectural Replacement
 
-| Phase | Wall-clock | Notes |
+Explicitly gated: only attempt if Levels 2–4 produced an unambiguous, reproducible advantage on a specific capability (e.g., local noise filtering or streaming efficiency). Otherwise, conclude with the Level 3 Hybrid paper.
+
+---
+
+## 11. Compute Budget (Single GPU, ~24GB class card)
+
+| Phase | Wall-clock | Focus |
 |---|---|---|
-| Infra + Level 0 | 2–3 days | mostly data/tokenizer pipeline |
-| Level 1 (3 baselines) | 3–5 days | parallelizable if multi-GPU available |
-| §7 PE/length-generalization | 3–4 days | reuses Level 1 checkpoints |
-| Level 2 (NCA-LM + sweep) | 1–1.5 weeks | WikiText-2 sweep, single WikiText-103 confirmation run |
-| Level 3 (hybrid) | 1–2 weeks | includes robustness eval harness build |
-| Level 4 (streaming, conditional) | 1–2 weeks | only if gated-in |
-| **Total (through Level 3)** | **~4–5 weeks** | Level 4/5 conditional, add 2–4 more weeks if triggered |
+| Infra + Level 0 | 1–2 days | Tokenizer, data loaders, sanity check |
+| Level 1 (Baselines) | 3–4 days | Transformer, Sliding Transformer, Mamba, GRU |
+| §7 Length Generalization | 2–3 days | Eval-only passes across sequence lengths |
+| Level 2 (Dilated NCA-LM) | 5–7 days | K-sweep, dilation verification |
+| Level 3 (Hybrid Adaptor & Noise) | 1.5–2 weeks | Primary paper results: clean PPL + corruption robustness |
+| Level 4 (Streaming, conditional) | 1 week | Activation caching benchmark & recovery probes |
+| **Total** | **~4 weeks** | Highly scoped, publication-ready trajectory |
 
 ---
 
-## 12. Decision gates (write these in the README, check them honestly)
+## 12. Decision Gates (Hard Stops)
 
-- **After Level 2 sweep:** if no config beats the K=1 baseline by a meaningful margin, and the K-vs-perplexity curve doesn't even qualitatively match TextNCA's reported shape, stop and diagnose before proceeding — don't grid-search harder, per the KdV lesson about not "optimizing gamma" indefinitely.
-- **After §7:** this is your cheapest, highest-signal experiment. If NCA-LM's extrapolation curve is *not* flatter than NoPE-Transformer's, that's a real negative result — report it as such (the structural-locality-as-relative-PE hypothesis was wrong), don't quietly drop the experiment from the writeup.
-- **Before Level 4:** require a specific, named signal from Level 2/3 (not vibes) before investing 1–2 weeks in the streaming harness. "It seemed like state mattered" is not a gate-pass; a quantified persistent-state effect (like your KdV memory-swap distortion numbers) is.
+1. **Gate 1 (Post-Level 2 Sweep):** If dilated NCA-LM ($K=6$) fails to match the *Sliding-Window Transformer* ($W=128$) within reasonable bounds on WikiText-2, stop and diagnose before running further sweeps.
+2. **Gate 2 (Post-§7 Length Test):** If NCA-LM's absolute perplexity is non-competitive despite a flat relative slope, report it transparently as an architectural limitation of compact receptive fields, not a length-generalization victory.
+3. **Gate 3 (Post-Level 3 Robustness):** If the NCA adaptor does not improve text corruption robustness over the baseline Transformer, halt the project and write up the negative result. If it does improve robustness by $>15\%$ under noise, prioritize writing the paper on **"AdaNCA-Text: Robust Language Representations via Cellular Adaptors."**
 
 ---
 
-## 13. Logging / reproducibility
+## 13. Logging & Scientific Reproducibility
 
-- One run = one config file + one output directory containing: final metrics, param count, git commit hash, and the exact command used.
-- Append-only decision log in the README (mirror the style of your KdV summary — the negative results were the most useful part of that log, don't sanitize them out here either).
-- Track every "expected per literature X" claim in this plan against your actual result explicitly — a table of predicted vs. observed at the end of each level is cheap to produce and is exactly what makes the final writeup credible.
+- Every run logs: config YAML, exact git commit, parameter count assertion, seed, training FLOPs, and evaluation metrics.
+- Keep the append-only `README.md` log active throughout all phases.
