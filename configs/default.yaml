@@ -1,0 +1,43 @@
+# Default Experiment Configuration
+# KdV Equation: u_t + alpha*u*u_x + beta*u_xxx = 0 (Canonical: alpha=6.0, beta=1.0)
+
+physics:
+  N: 256                    # Spatial grid cells
+  Lx: 50.0                  # Domain length [-Lx/2, Lx/2)
+  alpha: 6.0                # Nonlinear advection coefficient
+  beta: 1.0                 # Linear dispersion coefficient
+  dt_internal: 0.005        # Numerical solver fine internal time step
+
+time_discretization:
+  delta_T: 0.1              # Constant physical observation interval
+  K: 2                      # Number of NCA recurrent micro-updates per delta_T
+
+dataset:
+  train_horizon: 16         # Macro steps in training trajectories (T = 1.6)
+  long_horizon: 100         # Macro steps in long-horizon evaluation (T = 10.0)
+  n_train: 32               # Number of training trajectories
+  n_val: 8                  # Number of validation trajectories
+  seed: 42                  # Deterministic generation seed
+  data_dir: "data/default"
+
+models:
+  hidden_dim: 16            # Hidden channels for baseline Vanilla NCA and Memory-NCA
+  memory_dim: 16            # Memory channels for Memory-NCA
+  kernel_size: 3            # Receptive field radius r=1 (kernel_size = 2*r + 1)
+  mlp_hidden: 64            # Intermediate MLP width per cell
+
+training:
+  batch_size: 8
+  learning_rate: 0.001
+  weight_decay: 1.0e-4
+  epochs: 30
+  rollout_steps: 8          # Recurrent rollout length during training (M macro steps)
+  grad_clip: 1.0
+  seed: 42
+
+evaluation:
+  test_horizons: [1, 10, 50, 100]
+  seeds: [42, 123, 999]     # Multi-seed statistical evaluation
+
+paths:
+  output_dir: "outputs/default"

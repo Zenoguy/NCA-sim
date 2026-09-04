@@ -1,0 +1,42 @@
+# Smoke Test Configuration (Small & Fast for End-to-End Sanity)
+
+physics:
+  N: 128
+  Lx: 40.0
+  alpha: 6.0
+  beta: 1.0
+  dt_internal: 0.01
+
+time_discretization:
+  delta_T: 0.1
+  K: 2
+
+dataset:
+  train_horizon: 8
+  long_horizon: 20
+  n_train: 12
+  n_val: 4
+  seed: 42
+  data_dir: "data/smoke_test"
+
+models:
+  hidden_dim: 8
+  memory_dim: 8
+  kernel_size: 3
+  mlp_hidden: 32
+
+training:
+  batch_size: 4
+  learning_rate: 0.003
+  weight_decay: 1.0e-4
+  epochs: 5
+  rollout_steps: 4
+  grad_clip: 1.0
+  seed: 42
+
+evaluation:
+  test_horizons: [1, 5, 10, 20]
+  seeds: [42]
+
+paths:
+  output_dir: "outputs/smoke_test"
