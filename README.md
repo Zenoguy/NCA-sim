@@ -152,6 +152,9 @@ python scripts/run_memory_swapping.py --config configs/default.yaml
 
 # Multicore CPU scaling benchmark (Ryzen 5 5600H)
 python scripts/benchmark_cpu.py --config configs/default.yaml
+
+# Three Controlled Environments Benchmark (Testing Non-Markovian Memory Advantage)
+python scripts/run_three_environments.py
 ```
 
 ---
@@ -171,9 +174,32 @@ python scripts/benchmark_cpu.py --config configs/default.yaml
 
 ---
 
-## 9. Known Limitations
+## 9. Three Controlled Environments Benchmark
+
+To test whether the benefit of persistent memory increases when the underlying physical system requires temporal history, we evaluated parameter-matched models across three controlled regimes:
+
+1. **Environment A (Fully Observed KdV)**: Markovian baseline ($u(t) \to u(t+\Delta T)$).
+2. **Environment B (Partially Observed KdV)**: Sparse probe stream ($P=16$ probes out of $N=128$, $12.5\%$ spatial coverage). Continuous field reconstruction.
+3. **Environment C (Coupled Non-Markovian KdV)**: Mori-Zwanzig system ($u_t + 6 u u_x + u_{xxx} = w, w_t = -\lambda w + \kappa u$). Latent field $w$ is strictly hidden.
+
+### Results Across Environments (Mean $\pm$ Std across Seeds [42, 123]):
+
+| Environment | Model | Parameters | Val Rollout Rel $L_2$ | Memory Advantage (%) |
+|---|---|---|---|---|
+| **Env A (Fully Observed)** | Vanilla NCA | 7,765 | 3.495e-02 $\pm$ 6.9e-03 | Baseline |
+| **Env A (Fully Observed)** | Memory-NCA | 7,769 | 1.185e-01 $\pm$ 1.1e-02 | **-239.0%** |
+| **Env B (Sparse Probes)** | Vanilla NCA | 7,765 | 6.955e-01 $\pm$ 2.6e-03 | Baseline |
+| **Env B (Sparse Probes)** | Memory-NCA | 7,769 | 7.042e-01 $\pm$ 2.4e-02 | **-1.2%** |
+| **Env C (Coupled Memory)** | Vanilla NCA | 7,765 | 4.940e-02 $\pm$ 1.3e-02 | Baseline |
+| **Env C (Coupled Memory)** | Memory-NCA | 7,769 | 1.029e-01 $\pm$ 1.4e-02 | **-108.4%** |
+
+*Takeaway*: Because Vanilla NCA retains continuous un-gated hidden channels $h \in \mathbb{R}^{C_h \times N}$ across rollout steps, its residual recurrence ($h \leftarrow h + \Delta h$) already possesses memory capacity. Dedicating parameter capacity to explicit sigmoid gating under matched parameter budgets (~7,765 parameters) reduces the capacity available for spatial perception and nonlinear mixing.
+
+---
+
+## 10. Known Limitations
 
 1. **Single-PDE Scope**: Results are specific to the 1D Korteweg–de Vries equation with periodic boundaries; behavior on dissipative systems (Burgers, Kuramoto–Sivashinsky) may differ.
 2. **Local vs. Nonlocal Operators**: Higher-order dispersion ($\partial_{xxx}$) requires multi-step spatial propagation to communicate across cells, making purely local NCAs challenging without sufficient recurrent depth $K$.
 3. **Autoregressive Error Accumulation**: Like all recurrent neural surrogates, errors accumulate over long horizons; physical conservation loss penalties may be needed for thousand-step rollouts.
-# NCA-sim
+
