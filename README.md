@@ -223,7 +223,35 @@ We evaluated five transport conditions under matched parameters (~$7,765$ parame
 
 ---
 
-## 11. Known Limitations
+## 11. Advective Vanilla NCA: Decoupling Transport Geometry from Gating Tax
+
+To eliminate the ~3,300 parameter gating tax of explicit memory cells, **Advective Vanilla NCA** applies differentiable semi-Lagrangian transport directly to Vanilla NCA's own $C_h = 16$ persistent hidden channels $h(x, t)$, preserving the full 115-wide MLP with strictly **7,765 trainable parameters**.
+
+![Figure 13: Advective Vanilla NCA Diagnostics](outputs/default/plots/fig13_advective_vanilla_gamma_sweep.png)
+
+### Multi-Seed Results (Seeds 42, 123, 999):
+
+| Model Architecture | Velocity Family $v(x, t)$ | Scale $\gamma$ | Trainable Params | Neural MACs / $\Delta T$ | Transport Ops | Validation Rel $L_2$ | Final Rel $L_2$ |
+|---|---|---|---|---|---|---|---|
+| **Eulerian Vanilla NCA** | $v = 0$ (Stationary) | $0.0$ | 7,765 | 1,945,344 | 0 | 0.4091 $\pm$ 0.0613 | 1.5761 |
+| **Advective Vanilla NCA** | $v = 0.2 \cdot 6u$ | $0.2$ | 7,765 | 1,945,344 | 20,480 | 0.4206 $\pm$ 0.0742 | 1.6885 |
+| **Advective Vanilla NCA** | $v = 2u$ (Peak-Matched) | $1/3$ | 7,765 | 1,945,344 | 20,480 | 0.4053 $\pm$ 0.0848 | 1.5913 |
+| **Advective Vanilla NCA** | $v = 0.5 \cdot 6u$ | $0.5$ | 7,765 | 1,945,344 | 20,480 | 0.4017 $\pm$ 0.0686 | 1.5358 |
+| **Advective Vanilla NCA** | $v = 6u$ (Characteristic) | $\mathbf{1.0}$ | 7,765 | 1,945,344 | 20,480 | **0.3416 $\pm$ 0.0575** | **1.0419** |
+| **Oracle Coherent Control** | $v = 2A_{\text{true}}$ (Rigid) | — | 7,765 | 1,945,344 | 20,480 | 0.3973 $\pm$ 0.0756 | 1.4950 |
+| **Learned Velocity NCA** | $v = \hat{v}_\theta(u, h)$ | — | 7,842 | 1,963,776 | 20,480 | **0.3018 $\pm$ 0.0864** | **0.9698** |
+| **Advective Memory-NCA** | $v = 6u$ ($C_m=16$) | $1.0$ | 7,769 | 1,959,424 | 20,480 | 0.3682 $\pm$ 0.0379 | 1.1551 |
+| **Stationary Memory-NCA** | $v = 0$ ($C_m=16$) | $0.0$ | 7,769 | 1,951,232 | 0 | 0.3917 $\pm$ 0.0298 | 1.1074 |
+
+### Key Experimental Insights:
+1. **Advective Vanilla Beats Eulerian Vanilla**: Characteristic transport ($v=6u$) drops rollout error from **$0.4091 \to 0.3416$** and final error from **$1.5761 \to 1.0419$** at identical parameter count ($7,765$).
+2. **Learned Velocity Breaks All Baselines**: Flow-discovered transport achieves **$0.3018 \pm 0.0864$**, outperforming both stationary and advective gated memory.
+3. **Stage 1 Fixed-$\theta^\star_{\gamma=1}$ Sensitivity**: Shows a parabolic convex potential well with the global minimum precisely at nominal $\gamma = 1.0$ ($0.3416$), while freezing transport ($\gamma=0$) causes error to surge to **$0.5911$**.
+4. **Integer Shift Translation Equivariance**: Discrete integer translations yield machine-zero ($< 10^{-8}$) error across all models.
+
+---
+
+## 12. Known Limitations
 
 1. **Single-PDE Scope**: Results are specific to the 1D Korteweg–de Vries equation with periodic boundaries; behavior on dissipative systems (Burgers, Kuramoto–Sivashinsky) may differ.
 2. **Local vs. Nonlocal Operators**: Higher-order dispersion ($\partial_{xxx}$) requires multi-step spatial propagation to communicate across cells, making purely local NCAs challenging without sufficient recurrent depth $K$.

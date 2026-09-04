@@ -1,0 +1,12 @@
+{
+  "config_A_100pct_transport_characteristic": {
+    "description": "AdvectiveMemoryNCA with Cm=16, transport_dim=16 (all-transported), mode='characteristic'",
+    "reproduced_rel_l2": 0.3381642824411852,
+    "original_reported_value": 0.3287
+  },
+  "config_B_50pct_transport_learned": {
+    "description": "AdvectiveMemoryNCA with Cm=16, transport_dim=8 (dual 50/50 partition), mode='learned'",
+    "reproduced_rel_l2": 0.4025814135324737,
+    "original_reported_value": 0.3649
+  }
+}
