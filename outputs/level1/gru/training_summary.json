@@ -1,0 +1,9 @@
+{
+  "model_type": "gru",
+  "config_file": "configs/level1_gru.yaml",
+  "seed": 42,
+  "total_parameters": 10243520,
+  "best_val_perplexity": 62.61,
+  "test_loss": 4.0611,
+  "test_perplexity": 58.04
+}

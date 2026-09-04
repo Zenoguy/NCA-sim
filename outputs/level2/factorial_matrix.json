@@ -3,7 +3,7 @@
   "reference_floors": {
     "3_gram_test_ppl": 89.56,
     "5_gram_test_ppl": 99.4,
-    "sliding_transformer_10m_test_ppl": null
+    "sliding_transformer_10m_test_ppl": 42.3
   },
   "models": {
     "variant_a_shared_3m": {
@@ -14,10 +14,10 @@
       "forward_flops_per_token": 19648512,
       "train_tokens_per_sec": 2066.4,
       "infer_tokens_per_sec": 9437.4,
-      "trained": false,
-      "val_ppl": null,
-      "test_ppl": null,
-      "test_loss": null
+      "trained": true,
+      "val_ppl": 172.93,
+      "test_ppl": 160.68,
+      "test_loss": 5.0794
     },
     "variant_b_unshared_3m": {
       "name": "Variant B (Unshared 3.6M, d=160)",
@@ -27,10 +27,10 @@
       "forward_flops_per_token": 7229440,
       "train_tokens_per_sec": 3784.6,
       "infer_tokens_per_sec": 21942.9,
-      "trained": false,
-      "val_ppl": null,
-      "test_ppl": null,
-      "test_loss": null
+      "trained": true,
+      "val_ppl": 257.19,
+      "test_ppl": 238.34,
+      "test_loss": 5.4737
     },
     "variant_c_unshared_10m": {
       "name": "Variant C (Unshared 9.8M, d=288)",
@@ -40,10 +40,10 @@
       "forward_flops_per_token": 19648512,
       "train_tokens_per_sec": 1551.7,
       "infer_tokens_per_sec": 7347.4,
-      "trained": false,
-      "val_ppl": null,
-      "test_ppl": null,
-      "test_loss": null
+      "trained": true,
+      "val_ppl": 148.3,
+      "test_ppl": 137.67,
+      "test_loss": 4.9248
     },
     "variant_d_shared_10m": {
       "name": "Variant D (Shared 9.7M, d=576)",
@@ -53,11 +53,15 @@
       "forward_flops_per_token": 69156864,
       "train_tokens_per_sec": 616.6,
       "infer_tokens_per_sec": 2550.0,
-      "trained": false,
-      "val_ppl": null,
-      "test_ppl": null,
-      "test_loss": null
+      "trained": true,
+      "val_ppl": 115.39,
+      "test_ppl": 105.92,
+      "test_loss": 4.6627
     }
   },
-  "comparative_deltas": {}
+  "comparative_deltas": {
+    "pure_weight_sharing_penalty_3m": -77.66,
+    "capacity_compensation_delta_10m": -31.75,
+    "width_effect_delta_w288": 23.01
+  }
 }

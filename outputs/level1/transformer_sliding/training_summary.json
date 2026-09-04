@@ -1,0 +1,9 @@
+{
+  "model_type": "transformer",
+  "config_file": "configs/level1_transformer_sliding.yaml",
+  "seed": 42,
+  "total_parameters": 10228992,
+  "best_val_perplexity": 45.49,
+  "test_loss": 3.7447,
+  "test_perplexity": 42.30
+}

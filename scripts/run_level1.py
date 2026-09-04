@@ -82,6 +82,20 @@ def build_calibration_table(output_file="outputs/level1/calibration_table.json")
         if trained:
             with open(summary_file, "r") as f:
                 summary = json.load(f)
+        elif Path(output_file).exists():
+            try:
+                with open(output_file, "r") as f:
+                    cached = json.load(f).get("models", {}).get(key, {})
+                    if cached.get("trained"):
+                        trained = True
+                        summary = {
+                            "best_val_perplexity": cached.get("val_ppl"),
+                            "test_perplexity": cached.get("test_ppl"),
+                            "test_loss": cached.get("test_loss"),
+                            "total_parameters": cached.get("total_params"),
+                        }
+            except Exception:
+                pass
 
         params_total = prof.get("total_params", summary.get("total_parameters", 0))
         params_str = f"{params_total / 1e6:.2f}M" if params_total else "N/A"

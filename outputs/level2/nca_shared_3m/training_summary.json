@@ -1,0 +1,9 @@
+{
+  "model_type": "nca_lm",
+  "config_file": "configs/level2_nca_shared_3m.yaml",
+  "seed": 42,
+  "total_parameters": 3605185,
+  "best_val_perplexity": 172.93,
+  "test_loss": 5.0794,
+  "test_perplexity": 160.68
+}
