@@ -1,0 +1,31 @@
+# Variant B: Unshared CNN Stack (~3.6M params, d=160, K=6)
+# Pure sharing control: equal parameters to Variant A, untied weights
+model:
+  type: "nca_lm"
+  vocab_size: 8192
+  d_embed: 160
+  d_hidden_channels: 0
+  radius: 2
+  K: 6
+  max_K: 6
+  shared_weights: false
+  step_embed_type: "sinusoidal"
+  tie_weights: true
+
+data:
+  train_npy: "data/raw/train.npy"
+  valid_npy: "data/raw/valid.npy"
+  test_npy: "data/raw/test.npy"
+  seq_len: 128
+  batch_size: 32
+
+training:
+  epochs: 10
+  lr: 0.0005
+  min_lr: 0.00005
+  weight_decay: 0.1
+  warmup_steps: 200
+  grad_clip: 1.0
+  seed: 42
+  eval_interval_steps: 250
+  save_dir: "outputs/level2/nca_unshared_3m"

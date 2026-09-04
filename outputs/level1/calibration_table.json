@@ -1,0 +1,57 @@
+{
+  "description": "Phase 1 Frozen Calibration Table (10M parameter budget, WikiText-2)",
+  "ngram_floor": {
+    "3_gram_test_ppl": 89.56,
+    "5_gram_test_ppl": 99.4
+  },
+  "models": {
+    "gru": {
+      "name": "GRU Baseline",
+      "config": "configs/level1_gru.yaml",
+      "total_params": 10243520,
+      "forward_flops_per_token": 20464640,
+      "train_tokens_per_sec": 1645.6,
+      "infer_tokens_per_sec": 6432.6,
+      "trained": false,
+      "val_ppl": null,
+      "test_ppl": null,
+      "test_loss": null
+    },
+    "primary_transformer": {
+      "name": "Primary Transformer",
+      "config": "configs/level1_transformer.yaml",
+      "total_params": 10228992,
+      "forward_flops_per_token": 21037056,
+      "train_tokens_per_sec": 1841.4,
+      "infer_tokens_per_sec": 8276.7,
+      "trained": true,
+      "val_ppl": 8475.2,
+      "test_ppl": 8476.48,
+      "test_loss": 9.0451
+    },
+    "sliding_transformer": {
+      "name": "Sliding Transformer (W=128)",
+      "config": "configs/level1_transformer_sliding.yaml",
+      "total_params": 10228992,
+      "forward_flops_per_token": 21037056,
+      "train_tokens_per_sec": 1683.9,
+      "infer_tokens_per_sec": 7723.9,
+      "trained": false,
+      "val_ppl": null,
+      "test_ppl": null,
+      "test_loss": null
+    },
+    "mamba": {
+      "name": "Mamba (Selective SSM)",
+      "config": "configs/level1_mamba.yaml",
+      "total_params": 9898752,
+      "forward_flops_per_token": 19193856,
+      "train_tokens_per_sec": 37.3,
+      "infer_tokens_per_sec": 2767.1,
+      "trained": false,
+      "val_ppl": null,
+      "test_ppl": null,
+      "test_loss": null
+    }
+  }
+}

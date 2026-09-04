@@ -23,6 +23,7 @@ from eval.perplexity import evaluate_neural_perplexity, loss_to_perplexity
 from models.transformer_baseline import TransformerLM
 from models.mamba_baseline import MambaLM
 from models.rnn_baseline import GRULM
+from models.nca_lm import NCA_LM
 
 
 def get_git_commit_hash() -> str:
@@ -65,6 +66,18 @@ def build_model(cfg: dict) -> nn.Module:
             d_model=m_cfg["d_model"],
             num_layers=m_cfg["num_layers"],
             dropout=m_cfg.get("dropout", 0.1),
+            tie_weights=m_cfg.get("tie_weights", True),
+        )
+    elif m_type in ("nca_lm", "nca"):
+        return NCA_LM(
+            vocab_size=m_cfg["vocab_size"],
+            d_embed=m_cfg.get("d_embed", m_cfg.get("d_model", 288)),
+            d_hidden_channels=m_cfg.get("d_hidden_channels", 0),
+            radius=m_cfg.get("radius", 2),
+            K=m_cfg.get("K", 6),
+            max_K=m_cfg.get("max_K", 12),
+            shared_weights=m_cfg.get("shared_weights", True),
+            step_embed_type=m_cfg.get("step_embed_type", "sinusoidal"),
             tie_weights=m_cfg.get("tie_weights", True),
         )
     else:
