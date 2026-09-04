@@ -122,12 +122,13 @@ def load_model_from_checkpoint(
         return model, "nca", True
 
     elif model_key == "primary_transformer":
-        # Primary Transformer 10.2M
+        # Primary Transformer 10.2M (num_layers=3, mlp_ratio=4.0, d_model=384)
         model = TransformerLM(
             vocab_size=vocab_size,
             d_model=384,
-            num_layers=4,
+            num_layers=3,
             num_heads=6,
+            mlp_ratio=4.0,
             attention_mode="causal",
             tie_weights=True,
         )
@@ -138,10 +139,10 @@ def load_model_from_checkpoint(
         return model, "transformer", False
 
     elif model_key == "gru_baseline":
-        # GRU 10.2M
+        # GRU 10.2M (d_model=560, num_layers=3)
         model = GRULM(
             vocab_size=vocab_size,
-            d_model=512,
+            d_model=560,
             num_layers=3,
             tie_weights=True,
         )

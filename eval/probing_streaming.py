@@ -86,7 +86,7 @@ def evaluate_streaming_state_complexity(
                 "type": "transformer",
                 "name": "Primary Transformer (10M)",
                 "d_model": 384,
-                "num_layers": 4,
+                "num_layers": 3,
             },
             "nca_variant_d": {
                 "type": "nca",
@@ -105,7 +105,7 @@ def evaluate_streaming_state_complexity(
             "gru_baseline": {
                 "type": "gru",
                 "name": "GRU Baseline (10M)",
-                "d_model": 512,
+                "d_model": 560,
                 "num_layers": 3,
             },
         }
