@@ -1,0 +1,24 @@
+{
+  "git_commit": "62d06f7f131314392698da2c78d74bebe2a03e04",
+  "timestamp": "2026-09-04 22:50:12",
+  "model_type": "transformer",
+  "config_file": "configs/level1_transformer.yaml",
+  "seed": 42,
+  "total_parameters": 10228992,
+  "device": "cpu",
+  "total_training_time_sec": 92.19,
+  "best_val_perplexity": 8475.2,
+  "test_loss": 9.0451,
+  "test_perplexity": 8476.48,
+  "history": [
+    {
+      "epoch": 1,
+      "step": 5,
+      "train_loss": 9.0798,
+      "train_ppl": 8776.49,
+      "val_loss": 9.0449,
+      "val_ppl": 8475.29,
+      "throughput_tok_per_sec": 2255.8
+    }
+  ]
+}

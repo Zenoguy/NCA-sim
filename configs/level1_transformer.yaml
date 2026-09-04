@@ -1,0 +1,29 @@
+# Primary Transformer Baseline (Full-Context Reference, ~10M params)
+model:
+  type: "transformer"
+  vocab_size: 8192
+  d_model: 384
+  num_layers: 3
+  num_heads: 6
+  mlp_ratio: 4.0
+  attention_mode: "causal"
+  dropout: 0.1
+  tie_weights: true
+
+data:
+  train_npy: "data/raw/train.npy"
+  valid_npy: "data/raw/valid.npy"
+  test_npy: "data/raw/test.npy"
+  seq_len: 128
+  batch_size: 32
+
+training:
+  epochs: 10
+  lr: 0.0005
+  min_lr: 0.00005
+  weight_decay: 0.1
+  warmup_steps: 200
+  grad_clip: 1.0
+  seed: 42
+  eval_interval_steps: 250
+  save_dir: "outputs/level1/transformer"
