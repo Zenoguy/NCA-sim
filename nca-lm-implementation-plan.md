@@ -296,12 +296,12 @@ Input Tokens → Embedding → Transformer Layer 1 → NCA Adaptor Step (K=2) �
 
 ## 8. Decision Gates (Stop/Go Protocol)
 
-- **Gate 1 (Q1 — Viability):** Does NCA-LM achieve a viable training perplexity on WikiText-2 (beating the n-gram floor and approaching the Sliding-Window Transformer)? If PPL remains $>100$, stop and inspect receptive field/optimization.
+- **Gate 1 (Q1 — Viability):** Does NCA-LM establish a functioning next-token predictor substantially above the n-gram baseline, and does it exhibit meaningful learning dynamics as $K$ and receptive field vary? If it cannot outperform the n-gram floor or shows flat learning across $K$/receptive field variations, stop and diagnose before investing further compute.
 - **Gate 2 (Q2 — Shared vs. Unshared):** Does the shared-rule NCA ($F_\theta$) show meaningful learning dynamics compared to the unshared stack ($F_{\theta_k}$)? Quantify the weight-sharing penalty.
 - **Gate 3 (Q3 — Candidate Search):** Does at least **one** candidate behavior (A: compute depth, B: context decoupling, C: perturbation recovery, D: robustness, E: streaming) demonstrate a measurable, reproducible advantage over the sliding-window Transformer and Mamba?
   - *If yes:* Proceed directly to Question 4 and design the Hybrid Adaptor around that specific behavior.
   - *If no:* Halt. Conclude with a rigorous negative result detailing which properties failed to transfer from 2D vision/physics to 1D language.
-- **Gate 4 (Q4 — Hybrid Transfer):** Does the NCA-adaptor deliver a $>10\%$ improvement on the target metric at $<5\%$ parameter overhead? If so, draft the paper.
+- **Gate 4 (Q4 — Hybrid Transfer):** Does the NCA-adaptor deliver a statistically significant, reproducible advantage on the target capability at $<5\%$ parameter overhead? If so, draft the paper.
 
 ---
 
