@@ -1,0 +1,132 @@
+{
+  "description": "Probe 3D: Streaming State Complexity",
+  "seq_lengths": [
+    128,
+    256,
+    512,
+    1024,
+    2048
+  ],
+  "models": {
+    "primary_transformer": {
+      "name": "Primary Transformer (10M)",
+      "type": "transformer",
+      "curve": [
+        {
+          "T": 128,
+          "state_memory_mb": 1.5
+        },
+        {
+          "T": 256,
+          "state_memory_mb": 3.0
+        },
+        {
+          "T": 512,
+          "state_memory_mb": 6.0
+        },
+        {
+          "T": 1024,
+          "state_memory_mb": 12.0
+        },
+        {
+          "T": 2048,
+          "state_memory_mb": 24.0
+        }
+      ],
+      "intercept_mb": 0.0,
+      "slope_mb_per_token": 0.011719,
+      "marginal_slope_mb_per_128_tokens": 1.5,
+      "asymptotic_complexity": "O(T)"
+    },
+    "nca_variant_d": {
+      "name": "NCA Variant D (Shared 9.7M, d=576)",
+      "type": "nca",
+      "curve": [
+        {
+          "T": 128,
+          "state_memory_mb": 0.2791
+        },
+        {
+          "T": 256,
+          "state_memory_mb": 0.2791
+        },
+        {
+          "T": 512,
+          "state_memory_mb": 0.2791
+        },
+        {
+          "T": 1024,
+          "state_memory_mb": 0.2791
+        },
+        {
+          "T": 2048,
+          "state_memory_mb": 0.2791
+        }
+      ],
+      "intercept_mb": 0.2791,
+      "slope_mb_per_token": -0.0,
+      "marginal_slope_mb_per_128_tokens": -0.0,
+      "asymptotic_complexity": "O(1)"
+    },
+    "nca_variant_a": {
+      "name": "NCA Variant A (Shared 3.6M, d=288)",
+      "type": "nca",
+      "curve": [
+        {
+          "T": 128,
+          "state_memory_mb": 0.1395
+        },
+        {
+          "T": 256,
+          "state_memory_mb": 0.1395
+        },
+        {
+          "T": 512,
+          "state_memory_mb": 0.1395
+        },
+        {
+          "T": 1024,
+          "state_memory_mb": 0.1395
+        },
+        {
+          "T": 2048,
+          "state_memory_mb": 0.1395
+        }
+      ],
+      "intercept_mb": 0.1395,
+      "slope_mb_per_token": -0.0,
+      "marginal_slope_mb_per_128_tokens": -0.0,
+      "asymptotic_complexity": "O(1)"
+    },
+    "gru_baseline": {
+      "name": "GRU Baseline (10M)",
+      "type": "gru",
+      "curve": [
+        {
+          "T": 128,
+          "state_memory_mb": 0.0059
+        },
+        {
+          "T": 256,
+          "state_memory_mb": 0.0059
+        },
+        {
+          "T": 512,
+          "state_memory_mb": 0.0059
+        },
+        {
+          "T": 1024,
+          "state_memory_mb": 0.0059
+        },
+        {
+          "T": 2048,
+          "state_memory_mb": 0.0059
+        }
+      ],
+      "intercept_mb": 0.0059,
+      "slope_mb_per_token": -0.0,
+      "marginal_slope_mb_per_128_tokens": -0.0,
+      "asymptotic_complexity": "O(1)"
+    }
+  }
+}

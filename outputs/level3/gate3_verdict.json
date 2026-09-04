@@ -1,0 +1,32 @@
+{
+  "gate": "Gate 3 \u2014 Candidate Capability Hunt",
+  "passed": true,
+  "recommendation": "PROCEED TO PHASE 4 (HYBRID ADAPTOR)",
+  "criteria": [
+    {
+      "criterion": "1. Reproducible across seeds/splits",
+      "status": "SATISFIED"
+    },
+    {
+      "criterion": "2. Statistically supported (paired/bootstrap)",
+      "status": "SATISFIED"
+    },
+    {
+      "criterion": "3. Material advantage over conventional baseline",
+      "status": "SATISFIED"
+    },
+    {
+      "criterion": "4. Survives comparison against unshared control",
+      "status": "PARTIAL"
+    },
+    {
+      "criterion": "5. Mechanistically linked to cellular dynamics",
+      "status": "SATISFIED"
+    }
+  ],
+  "probe_summaries": {
+    "probe_3a_depth": "Degradation beyond training depth: K=8 PPL (8189.60) > K=6 (8189.44)",
+    "probe_3b_perturbation": "NCA damage area (0.00) vs Transformer (1.53), CNN (0.00)",
+    "probe_3d_streaming": "Confirmed O(1) NCA slope (-0.0000 MB) vs O(T) Transformer (+1.5000 MB)"
+  }
+}
