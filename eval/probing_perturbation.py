@@ -180,6 +180,7 @@ def evaluate_perturbation_attenuation(
     subsequent_delta = delta_L[pos + 1 :]
     initial_shock = float(delta_L[pos])
     shock_t_plus_1 = float(delta_L[pos + 1]) if len(delta_L) > pos + 1 else 0.0
+    max_window = len(subsequent_delta)
 
     # Non-canceling cumulative damage area: D = sum max(0, Delta L_t)
     cumulative_damage_area = float(np.sum(np.maximum(0, subsequent_delta)))
@@ -191,20 +192,22 @@ def evaluate_perturbation_attenuation(
         if d <= half_life_threshold:
             t_half = offset + 1  # 1-indexed token steps after pos
             break
-    if t_half is None:
-        t_half = len(subsequent_delta)
 
     # Recovery distance t_{rec}: first token offset where delta_L <= 0.05 * shock_t_plus_1
     recovery_threshold = 0.05 * max(shock_t_plus_1, 1e-6)
     t_rec = None
     for offset in range(len(subsequent_delta)):
-        # Check if it stays below threshold for at least 3 consecutive steps or reaches end
         window = subsequent_delta[offset : min(offset + 3, len(subsequent_delta))]
         if np.all(window <= recovery_threshold):
             t_rec = offset + 1
             break
-    if t_rec is None:
-        t_rec = len(subsequent_delta)
+
+    # Explicit right-censoring indicators
+    half_life_censored = (t_half is None)
+    recovery_censored = (t_rec is None)
+
+    half_life_str = f"{t_half} tok" if not half_life_censored else f">{max_window} tok (censored)"
+    recovery_str = f"{t_rec} tok" if not recovery_censored else f">{max_window} tok (censored)"
 
     return {
         "pos": pos,
@@ -215,7 +218,12 @@ def evaluate_perturbation_attenuation(
         "initial_shock_delta": round(initial_shock, 4),
         "t_plus_1_shock_delta": round(shock_t_plus_1, 4),
         "cumulative_damage_area": round(cumulative_damage_area, 4),
-        "half_life_tokens": int(t_half),
-        "recovery_distance_tokens": int(t_rec),
+        "half_life_tokens": t_half if not half_life_censored else None,
+        "half_life_censored": half_life_censored,
+        "half_life_display": half_life_str,
+        "recovery_distance_tokens": t_rec if not recovery_censored else None,
+        "recovery_censored": recovery_censored,
+        "recovery_display": recovery_str,
         "trajectory_subsequent_delta": [round(float(x), 4) for x in subsequent_delta],
     }
+

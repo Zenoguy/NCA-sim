@@ -1,7 +1,7 @@
 {
-  "gate": "Gate 3 — Candidate Capability Hunt",
-  "passed": true,
-  "recommendation": "PROCEED TO PHASE 4 (HYBRID ADAPTOR)",
+  "gate": "Gate 3 \u2014 Candidate Capability Hunt",
+  "passed": false,
+  "recommendation": "GATE 3 NOT YET PASSED \u2014 REFINING CRITICAL PROBES",
   "criteria": [
     {
       "criterion": "1. Reproducible across seeds/splits",
@@ -9,25 +9,26 @@
     },
     {
       "criterion": "2. Statistically supported (paired/bootstrap)",
-      "status": "SATISFIED"
+      "status": "PARTIAL"
     },
     {
       "criterion": "3. Material advantage over conventional baseline",
-      "status": "SATISFIED"
+      "status": "PARTIAL"
     },
     {
-      "criterion": "4. Survives comparison against unshared control",
-      "status": "SATISFIED"
+      "criterion": "4. Survives comparison against unshared control (D vs C)",
+      "status": "NOT SATISFIED"
     },
     {
       "criterion": "5. Mechanistically linked to cellular dynamics",
-      "status": "SATISFIED"
+      "status": "PARTIAL"
     }
   ],
   "probe_summaries": {
-    "probe_3a_depth": "Dynamical Attractor at K=6: PPL converges to 105.92; over-iteration causes controlled relaxation (K=8 PPL 225.25).",
-    "probe_3b_perturbation": "NCA damage area D=13.48 vs Transformer D=15.03, and beats Unshared CNN D=21.05 by 36%.",
-    "probe_3c_robustness": "NCA sensitivity slope beta=6.40 vs Transformer beta=16.92 (Transformer is 2.6x more fragile to token noise).",
-    "probe_3d_streaming": "Confirmed O(1) bounded state slope (-0.0000 MB) vs Transformer O(T) KV cache (+1.1250 MB / 128 tok)."
+    "probe_3a_depth": "Sharp optimum at K=6; extrapolation beyond training depth causes degradation.",
+    "probe_3b_perturbation": "NCA damage area (13.48) < Transformer (15.03) and < CNN (21.05); recovery is censored (>63 tok).",
+    "probe_3c_robustness": "Robustness driven by convolutional locality rather than weight-sharing (CNN C 2.15x <= NCA D 2.38x << Transformer 4.90x).",
+    "probe_3d_streaming": "Bounded O(1) streaming state is real, but shared with recurrent architectures like GRU.",
+    "probe_3e_denoising": "Shared NCA (E_K=0.0620) vs Unshared CNN (E_K=0.0214); contraction advantage not established."
   }
 }

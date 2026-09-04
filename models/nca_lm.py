@@ -12,7 +12,8 @@ Implements:
 """
 
 import math
-from typing import Optional
+from typing import List, Optional
+
 
 import torch
 import torch.nn as nn
@@ -271,3 +272,26 @@ class NCA_LM(nn.Module):
         s_norm = self.norm(s_out)
         logits = self.readout(s_norm)
         return logits
+
+    def forward_intermediates(self, x: torch.Tensor, override_K: Optional[int] = None) -> List[torch.Tensor]:
+        """
+        Returns list of internal sequence states [s_0, s_1, ..., s_K] of shape [B, d_model, T].
+        Used by Probe 3E to measure latent error contraction over microsteps.
+        """
+        B, T = x.shape
+        e = self.embed(x).transpose(1, 2)
+
+        if self.d_hidden_channels > 0:
+            h0 = torch.zeros(B, self.d_hidden_channels, T, device=x.device, dtype=e.dtype)
+            s = torch.cat([e, h0], dim=1)
+        else:
+            s = e
+
+        intermediates = [s.clone()]
+        steps = override_K if override_K is not None else self.K
+        for k in range(steps):
+            s = self.step(s, step_idx=k)
+            intermediates.append(s.clone())
+
+        return intermediates
+

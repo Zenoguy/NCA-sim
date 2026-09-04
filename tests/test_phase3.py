@@ -137,17 +137,58 @@ def test_gate3_evaluator_rubric(tmp_path):
     d_dir = tmp_path / "outputs" / "level3"
     d_dir.mkdir(parents=True, exist_ok=True)
 
-    # Mock streaming complexity result confirming O(1)
-    stream_data = {
+    # When denoising advantage is established
+    denoise_data = {
         "models": {
-            "nca_variant_d": {"marginal_slope_mb_per_128_tokens": 0.0000},
-            "primary_transformer": {"marginal_slope_mb_per_128_tokens": 1.5000},
+            "variant_d_shared_10m": {
+                "metrics": {
+                    "final_contraction_E_K": 0.25,
+                    "is_statistically_contractive": True,
+                }
+            },
+            "variant_c_unshared_10m": {
+                "metrics": {
+                    "final_contraction_E_K": 0.80,
+                    "is_statistically_contractive": True,
+                }
+            },
         }
     }
-    with open(d_dir / "streaming_state_complexity.json", "w") as f:
+    with open(d_dir / "latent_denoising_contraction.json", "w") as f:
         import json
-        json.dump(stream_data, f)
+        json.dump(denoise_data, f)
 
     verdict = evaluate_gate_3(d_dir)
     assert verdict["passed"] is True
     assert "PROCEED" in verdict["recommendation"]
+
+
+def test_latent_error_contraction(small_synthetic_dataloader):
+    from eval.probing_denoising import evaluate_latent_error_contraction
+    model = NCA_LM(
+        vocab_size=512,
+        d_embed=64,
+        d_hidden_channels=0,
+        radius=2,
+        K=4,
+        max_K=6,
+        shared_weights=True,
+    )
+    res = evaluate_latent_error_contraction(
+        model,
+        small_synthetic_dataloader,
+        K=4,
+        pos=32,
+        noise_type="gaussian",
+        sigma=0.5,
+        device="cpu",
+        num_bootstrap=100,
+    )
+    assert "trajectory_E_k" in res
+    assert len(res["trajectory_E_k"]) == 5  # k=0, 1, 2, 3, 4
+    # E_0 must be normalized to 1.0
+    assert abs(res["trajectory_E_k"][0] - 1.0) < 1e-4
+    # Bootstrap CI exists and is properly ordered
+    ci = res["ci_95"]
+    assert ci[0] <= res["final_contraction_E_K"] <= ci[1]
+
