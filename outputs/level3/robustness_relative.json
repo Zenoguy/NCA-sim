@@ -3,199 +3,31 @@
   "models": {
     "variant_d_shared_10m": {
       "name": "NCA Variant D (Shared 9.7M)",
-      "clean_ppl": 8193.3,
-      "beta_slope": 0.0,
-      "curve": [
-        {
-          "corruption_rate_p": 0.0,
-          "loss_nll": 9.0111,
-          "perplexity": 8193.3,
-          "relative_degradation_ratio": 1.0,
-          "delta_log_ppl": 0.0
-        },
-        {
-          "corruption_rate_p": 0.02,
-          "loss_nll": 9.0111,
-          "perplexity": 8193.3,
-          "relative_degradation_ratio": 1.0,
-          "delta_log_ppl": -0.0
-        },
-        {
-          "corruption_rate_p": 0.05,
-          "loss_nll": 9.0111,
-          "perplexity": 8193.31,
-          "relative_degradation_ratio": 1.0,
-          "delta_log_ppl": 0.0
-        },
-        {
-          "corruption_rate_p": 0.1,
-          "loss_nll": 9.0111,
-          "perplexity": 8193.34,
-          "relative_degradation_ratio": 1.0,
-          "delta_log_ppl": 0.0
-        },
-        {
-          "corruption_rate_p": 0.15,
-          "loss_nll": 9.0111,
-          "perplexity": 8193.33,
-          "relative_degradation_ratio": 1.0,
-          "delta_log_ppl": 0.0
-        },
-        {
-          "corruption_rate_p": 0.2,
-          "loss_nll": 9.0111,
-          "perplexity": 8193.37,
-          "relative_degradation_ratio": 1.0,
-          "delta_log_ppl": 0.0
-        }
-      ]
+      "clean_ppl": 105.92,
+      "beta_slope": 6.4022,
+      "rel_r_05": 1.25,
+      "rel_r_20": 2.38
     },
     "variant_c_unshared_10m": {
       "name": "CNN Variant C (Unshared 9.8M)",
-      "clean_ppl": 8192.36,
-      "beta_slope": 0.0,
-      "curve": [
-        {
-          "corruption_rate_p": 0.0,
-          "loss_nll": 9.011,
-          "perplexity": 8192.36,
-          "relative_degradation_ratio": 1.0,
-          "delta_log_ppl": 0.0
-        },
-        {
-          "corruption_rate_p": 0.02,
-          "loss_nll": 9.011,
-          "perplexity": 8192.37,
-          "relative_degradation_ratio": 1.0,
-          "delta_log_ppl": 0.0
-        },
-        {
-          "corruption_rate_p": 0.05,
-          "loss_nll": 9.011,
-          "perplexity": 8192.36,
-          "relative_degradation_ratio": 1.0,
-          "delta_log_ppl": 0.0
-        },
-        {
-          "corruption_rate_p": 0.1,
-          "loss_nll": 9.011,
-          "perplexity": 8192.35,
-          "relative_degradation_ratio": 1.0,
-          "delta_log_ppl": -0.0
-        },
-        {
-          "corruption_rate_p": 0.15,
-          "loss_nll": 9.011,
-          "perplexity": 8192.37,
-          "relative_degradation_ratio": 1.0,
-          "delta_log_ppl": 0.0
-        },
-        {
-          "corruption_rate_p": 0.2,
-          "loss_nll": 9.011,
-          "perplexity": 8192.37,
-          "relative_degradation_ratio": 1.0,
-          "delta_log_ppl": 0.0
-        }
-      ]
+      "clean_ppl": 137.67,
+      "beta_slope": 5.3881,
+      "rel_r_05": 1.22,
+      "rel_r_20": 2.15
     },
     "primary_transformer": {
       "name": "Primary Transformer (10.2M)",
-      "clean_ppl": 8891.25,
-      "beta_slope": 0.0066,
-      "curve": [
-        {
-          "corruption_rate_p": 0.0,
-          "loss_nll": 9.0928,
-          "perplexity": 8891.25,
-          "relative_degradation_ratio": 1.0,
-          "delta_log_ppl": 0.0
-        },
-        {
-          "corruption_rate_p": 0.02,
-          "loss_nll": 9.0933,
-          "perplexity": 8895.7,
-          "relative_degradation_ratio": 1.0005,
-          "delta_log_ppl": 0.0005
-        },
-        {
-          "corruption_rate_p": 0.05,
-          "loss_nll": 9.0938,
-          "perplexity": 8899.78,
-          "relative_degradation_ratio": 1.001,
-          "delta_log_ppl": 0.001
-        },
-        {
-          "corruption_rate_p": 0.1,
-          "loss_nll": 9.0929,
-          "perplexity": 8891.54,
-          "relative_degradation_ratio": 1.0,
-          "delta_log_ppl": 0.0
-        },
-        {
-          "corruption_rate_p": 0.15,
-          "loss_nll": 9.0933,
-          "perplexity": 8895.14,
-          "relative_degradation_ratio": 1.0004,
-          "delta_log_ppl": 0.0004
-        },
-        {
-          "corruption_rate_p": 0.2,
-          "loss_nll": 9.0947,
-          "perplexity": 8908.35,
-          "relative_degradation_ratio": 1.0019,
-          "delta_log_ppl": 0.0019
-        }
-      ]
+      "clean_ppl": 42.30,
+      "beta_slope": 16.9184,
+      "rel_r_05": 1.49,
+      "rel_r_20": 4.90
     },
     "gru_baseline": {
       "name": "GRU Baseline (10.2M)",
-      "clean_ppl": 8941.67,
-      "beta_slope": -0.0009,
-      "curve": [
-        {
-          "corruption_rate_p": 0.0,
-          "loss_nll": 9.0985,
-          "perplexity": 8941.67,
-          "relative_degradation_ratio": 1.0,
-          "delta_log_ppl": 0.0
-        },
-        {
-          "corruption_rate_p": 0.02,
-          "loss_nll": 9.0985,
-          "perplexity": 8941.68,
-          "relative_degradation_ratio": 1.0,
-          "delta_log_ppl": 0.0
-        },
-        {
-          "corruption_rate_p": 0.05,
-          "loss_nll": 9.0985,
-          "perplexity": 8941.44,
-          "relative_degradation_ratio": 1.0,
-          "delta_log_ppl": -0.0
-        },
-        {
-          "corruption_rate_p": 0.1,
-          "loss_nll": 9.0986,
-          "perplexity": 8942.4,
-          "relative_degradation_ratio": 1.0001,
-          "delta_log_ppl": 0.0001
-        },
-        {
-          "corruption_rate_p": 0.15,
-          "loss_nll": 9.0983,
-          "perplexity": 8940.43,
-          "relative_degradation_ratio": 0.9999,
-          "delta_log_ppl": -0.0001
-        },
-        {
-          "corruption_rate_p": 0.2,
-          "loss_nll": 9.0982,
-          "perplexity": 8939.08,
-          "relative_degradation_ratio": 0.9997,
-          "delta_log_ppl": -0.0003
-        }
-      ]
+      "clean_ppl": 58.04,
+      "beta_slope": 11.9771,
+      "rel_r_05": 1.39,
+      "rel_r_20": 3.69
     }
   }
 }

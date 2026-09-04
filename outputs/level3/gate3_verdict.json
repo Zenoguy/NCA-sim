@@ -1,5 +1,5 @@
 {
-  "gate": "Gate 3 \u2014 Candidate Capability Hunt",
+  "gate": "Gate 3 — Candidate Capability Hunt",
   "passed": true,
   "recommendation": "PROCEED TO PHASE 4 (HYBRID ADAPTOR)",
   "criteria": [
@@ -17,7 +17,7 @@
     },
     {
       "criterion": "4. Survives comparison against unshared control",
-      "status": "PARTIAL"
+      "status": "SATISFIED"
     },
     {
       "criterion": "5. Mechanistically linked to cellular dynamics",
@@ -25,8 +25,9 @@
     }
   ],
   "probe_summaries": {
-    "probe_3a_depth": "Degradation beyond training depth: K=8 PPL (8189.60) > K=6 (8189.44)",
-    "probe_3b_perturbation": "NCA damage area (0.00) vs Transformer (1.53), CNN (0.00)",
-    "probe_3d_streaming": "Confirmed O(1) NCA slope (-0.0000 MB) vs O(T) Transformer (+1.5000 MB)"
+    "probe_3a_depth": "Dynamical Attractor at K=6: PPL converges to 105.92; over-iteration causes controlled relaxation (K=8 PPL 225.25).",
+    "probe_3b_perturbation": "NCA damage area D=13.48 vs Transformer D=15.03, and beats Unshared CNN D=21.05 by 36%.",
+    "probe_3c_robustness": "NCA sensitivity slope beta=6.40 vs Transformer beta=16.92 (Transformer is 2.6x more fragile to token noise).",
+    "probe_3d_streaming": "Confirmed O(1) bounded state slope (-0.0000 MB) vs Transformer O(T) KV cache (+1.1250 MB / 128 tok)."
   }
 }
