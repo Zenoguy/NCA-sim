@@ -64,6 +64,47 @@ def selective_scan_loop(
     return y
 
 
+def selective_scan_vectorized(
+    u: torch.Tensor,
+    delta: torch.Tensor,
+    A: torch.Tensor,
+    B: torch.Tensor,
+    C: torch.Tensor,
+    D: Optional[torch.Tensor] = None,
+) -> torch.Tensor:
+    """
+    Vectorized closed-form scan for linear state-space recurrence in log space.
+    h_t = a_t * h_{t-1} + b_t  ==>  h_t = exp(p_t) * sum_{j=0}^t exp(-p_j) * b_j
+    where p_t = cumsum(delta_t * A).
+    Eliminates the sequential Python for-loop, enabling high GPU throughput.
+    """
+    B_sz, T, D_in = u.shape
+    N = A.shape[1]
+
+    delta_expanded = delta.unsqueeze(-1)  # [B, T, D_in, 1]
+    A_expanded = A.view(1, 1, D_in, N)    # [1, 1, D_in, N]
+    log_dA = delta_expanded * A_expanded  # [B, T, D_in, N]
+
+    delta_u = (delta * u).unsqueeze(-1)   # [B, T, D_in, 1]
+    B_expanded = B.unsqueeze(2)           # [B, T, 1, N]
+    dB_u = delta_u * B_expanded           # [B, T, D_in, N]
+    C_expanded = C.unsqueeze(2)           # [B, T, 1, N]
+
+    p = torch.cumsum(log_dA, dim=1)
+    # Clamp p for numerical stability in fp16/fp32 exponentiation
+    p_clamped = torch.clamp(p, min=-35.0, max=35.0)
+    exp_neg_p = torch.exp(-p_clamped)
+    cumsum_term = torch.cumsum(exp_neg_p * dB_u, dim=1)
+    h = torch.exp(p_clamped) * cumsum_term  # [B, T, D_in, N]
+
+    y = (h * C_expanded).sum(dim=-1)       # [B, T, D_in]
+
+    if D is not None:
+        y = y + u * D.view(1, 1, D_in)
+
+    return y
+
+
 class MambaBlock(nn.Module):
     """
     Single Mamba (S6) Selective State Space Layer.
@@ -141,11 +182,13 @@ class MambaBlock(nn.Module):
             x_dbl, [self.dt_rank, self.d_state, self.d_state], dim=-1
         )
         dt = F.softplus(self.dt_proj(dt))  # [B, T, d_inner]
-
         A = -torch.exp(self.A_log)  # [d_inner, d_state]
 
-        # Execute selective scan
-        y = selective_scan_loop(u_conv, dt, A, B_mat, C_mat, self.D)
+        # Execute selective scan (vectorized by default for high throughput)
+        if use_reference_loop:
+            y = selective_scan_loop(u_conv, dt, A, B_mat, C_mat, self.D)
+        else:
+            y = selective_scan_vectorized(u_conv, dt, A, B_mat, C_mat, self.D)
 
         # Gate with z
         y = y * F.silu(z)
