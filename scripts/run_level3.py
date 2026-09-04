@@ -481,10 +481,10 @@ def main():
         dataloader = build_synthetic_dataset(num_sequences=32, seq_len=128, vocab_size=8192)
     else:
         print("Loading WikiText-2 test dataset...")
-        from data.dataset import create_wikitext_dataloaders
-        _, _, dataloader = create_wikitext_dataloaders(
-            data_dir="data/raw", seq_len=128, batch_size=32, num_workers=0
-        )
+        from data.dataset import get_dataloader
+        test_tokens = np.load("data/raw/test.npy")
+        dataloader = get_dataloader(test_tokens, seq_len=128, batch_size=32, shuffle=False)
+
 
     if args.action in ["all", "depth"]:
         run_probe_3a(device, dataloader, output_dir, synthetic=args.synthetic)

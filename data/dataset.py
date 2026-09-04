@@ -78,3 +78,22 @@ def get_dataloader(
         num_workers=num_workers,
         drop_last=False,
     )
+
+
+def create_wikitext_dataloaders(
+    data_dir: Union[str, "Path"] = "data/raw",
+    seq_len: int = 128,
+    batch_size: int = 32,
+    num_workers: int = 0,
+):
+    """Convenience loader for train, valid, and test WikiText-2 dataloaders."""
+    from pathlib import Path
+    data_dir = Path(data_dir)
+    train_tokens = np.load(data_dir / "train.npy")
+    valid_tokens = np.load(data_dir / "valid.npy")
+    test_tokens = np.load(data_dir / "test.npy")
+    train_loader = get_dataloader(train_tokens, seq_len=seq_len, batch_size=batch_size, shuffle=True, num_workers=num_workers)
+    valid_loader = get_dataloader(valid_tokens, seq_len=seq_len, batch_size=batch_size, shuffle=False, num_workers=num_workers)
+    test_loader = get_dataloader(test_tokens, seq_len=seq_len, batch_size=batch_size, shuffle=False, num_workers=num_workers)
+    return train_loader, valid_loader, test_loader
+
