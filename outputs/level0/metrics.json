@@ -1,0 +1,46 @@
+{
+  "timestamp": "2026-09-04 21:44:16",
+  "vocab_size": 8192,
+  "token_counts": {
+    "train": 2634143,
+    "valid": 271454,
+    "test": 307897
+  },
+  "models": {
+    "3_gram": {
+      "order": 3,
+      "discount": 0.75,
+      "fit_time_sec": 12.68,
+      "val": {
+        "loss": 4.5857,
+        "perplexity": 98.07,
+        "total_tokens": 271454,
+        "order": 3
+      },
+      "test": {
+        "loss": 4.4949,
+        "perplexity": 89.56,
+        "total_tokens": 307897,
+        "order": 3
+      }
+    },
+    "5_gram": {
+      "order": 5,
+      "discount": 0.75,
+      "fit_time_sec": 42.2,
+      "val": {
+        "loss": 4.6774,
+        "perplexity": 107.49,
+        "total_tokens": 271454,
+        "order": 5
+      },
+      "test": {
+        "loss": 4.5991,
+        "perplexity": 99.4,
+        "total_tokens": 307897,
+        "order": 5
+      }
+    }
+  },
+  "total_elapsed_sec": 87.84
+}

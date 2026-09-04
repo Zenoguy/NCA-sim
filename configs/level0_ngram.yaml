@@ -1,0 +1,26 @@
+# Level 0 Baseline Configuration: N-gram Floor
+dataset:
+  name: "wikitext-2"
+  raw_dir: "data/raw"
+  train_file: "data/raw/train.txt"
+  valid_file: "data/raw/valid.txt"
+  test_file: "data/raw/test.txt"
+
+tokenizer:
+  vocab_size: 8192
+  min_frequency: 2
+  save_path: "data/tokenizer.json"
+  special_tokens:
+    - "<unk>"
+    - "<s>"
+    - "</s>"
+    - "<pad>"
+
+ngram:
+  orders: [3, 5]
+  smoothing: "kneser_ney"
+  discount: 0.75
+
+output:
+  dir: "outputs/level0"
+  metrics_file: "outputs/level0/metrics.json"
