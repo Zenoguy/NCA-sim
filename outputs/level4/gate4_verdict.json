@@ -1,0 +1,44 @@
+{
+  "gate": "Gate 4",
+  "phase": "Phase 4: Hybrid NCA-Transformer",
+  "passed": false,
+  "synthetic_mode": false,
+  "criteria": {
+    "criterion_4_1_clean_ppl_preservation": {
+      "description": "Hybrid NCA maintains clean test PPL <= 46.5 (baseline 42.30)",
+      "passed": true,
+      "values": {
+        "pure_transformer_ppl": 42.3,
+        "hybrid_nca_ppl": 41.11,
+        "delta_ppl": -1.1899999999999977
+      }
+    },
+    "criterion_4_2_robustness_advantage": {
+      "description": "Hybrid NCA reduces surface noise degradation slope beta < 12.0 (Transformer=16.92)",
+      "passed": false,
+      "values": {
+        "pure_transformer_beta": 16.9184,
+        "hybrid_nca_beta": 17.6945,
+        "reduction_ratio": 0.9561389132216224
+      }
+    },
+    "criterion_4_3_cellular_vs_cnn_specificity": {
+      "description": "Cellular adaptor beats or matches matched CNN control",
+      "passed": true,
+      "values": {
+        "hybrid_nca_beta": 17.6945,
+        "hybrid_cnn_beta": 17.0024,
+        "hybrid_nca_ppl": 41.11,
+        "hybrid_cnn_ppl": 41.42
+      }
+    },
+    "criterion_4_4_parameter_overhead": {
+      "description": "Parameter overhead strictly < 5.0% (+3.47% measured, 355k params)",
+      "passed": true,
+      "overhead_percentage": 3.47,
+      "adaptor_parameters": 355393,
+      "baseline_parameters": 10228992
+    }
+  },
+  "scientific_conclusion": "Hybrid evaluation pending full GPU training."
+}
