@@ -64,12 +64,12 @@ def load_test_dataloader(
         return build_synthetic_dataset(num_sequences=32, seq_len=seq_len)
 
     from data.dataset import get_dataloader
+    test_tokens = np.load(test_npy)
     return get_dataloader(
-        npy_path=test_npy,
+        test_tokens,
         seq_len=seq_len,
         batch_size=batch_size,
         shuffle=False,
-        drop_last=False,
     )
 
 
