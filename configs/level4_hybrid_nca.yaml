@@ -1,0 +1,33 @@
+# Phase 4: Hybrid NCA-Transformer (~10.58M params, +3.47% overhead)
+# Pre-attention weight-shared cellular adaptor (K=2 microsteps, RF=7, GRU gating)
+model:
+  type: "hybrid_transformer"
+  vocab_size: 8192
+  d_model: 384
+  num_layers: 3
+  num_heads: 6
+  mlp_ratio: 4.0
+  attention_mode: "causal"
+  dropout: 0.1
+  tie_weights: true
+  adaptor_type: "nca"
+  adaptor_dim: 160
+  adaptor_K: 2
+
+data:
+  train_npy: "data/raw/train.npy"
+  valid_npy: "data/raw/valid.npy"
+  test_npy: "data/raw/test.npy"
+  seq_len: 128
+  batch_size: 32
+
+training:
+  epochs: 10
+  lr: 0.0005
+  min_lr: 0.00005
+  weight_decay: 0.1
+  warmup_steps: 200
+  grad_clip: 1.0
+  seed: 42
+  eval_interval_steps: 250
+  save_dir: "outputs/level4/hybrid_nca"

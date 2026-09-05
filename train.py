@@ -24,6 +24,7 @@ from models.transformer_baseline import TransformerLM
 from models.mamba_baseline import MambaLM
 from models.rnn_baseline import GRULM
 from models.nca_lm import NCA_LM
+from models.hybrid_transformer import HybridTransformerLM
 
 
 def get_git_commit_hash() -> str:
@@ -79,6 +80,21 @@ def build_model(cfg: dict) -> nn.Module:
             shared_weights=m_cfg.get("shared_weights", True),
             step_embed_type=m_cfg.get("step_embed_type", "sinusoidal"),
             tie_weights=m_cfg.get("tie_weights", True),
+        )
+    elif m_type in ("hybrid_transformer", "hybrid"):
+        return HybridTransformerLM(
+            vocab_size=m_cfg["vocab_size"],
+            d_model=m_cfg.get("d_model", 384),
+            num_layers=m_cfg.get("num_layers", 3),
+            num_heads=m_cfg.get("num_heads", 6),
+            mlp_ratio=m_cfg.get("mlp_ratio", 4.0),
+            attention_mode=m_cfg.get("attention_mode", "causal"),
+            window_size=m_cfg.get("window_size", 128),
+            dropout=m_cfg.get("dropout", 0.1),
+            tie_weights=m_cfg.get("tie_weights", True),
+            adaptor_type=m_cfg.get("adaptor_type", "nca"),
+            adaptor_dim=m_cfg.get("adaptor_dim", 160),
+            adaptor_K=m_cfg.get("adaptor_K", 2),
         )
     else:
         raise ValueError(f"Unsupported model type: {m_type}")
