@@ -4,5 +4,6 @@ __pycache__/
 *$py.class
 .pytest_cache/
 data/raw/
+archive_nca_lm/data/raw/
 *.npy
 *.pt
